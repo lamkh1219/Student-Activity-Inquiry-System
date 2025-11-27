@@ -1,0 +1,183 @@
+/* 基本重設和字體 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+/* 標題區域 */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 20px;
+}
+
+header h1 {
+    color: #007bff;
+    margin: 0;
+}
+
+/* 主要內容區域 */
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 篩選器群組 */
+.filter-group {
+    margin-bottom: 25px;
+    background-color: #fdfdfd;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+/* "依學生查詢" 的外框 */
+fieldset.filter-group {
+    border: 1px solid #007bff;
+}
+
+fieldset.filter-group legend {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #007bff;
+    padding: 0 10px;
+}
+
+/* 班級和學號的輸入框排版 */
+.student-filter-inputs {
+    display: flex;
+    gap: 20px; /* 讓輸入框之間有間距 */
+    margin-bottom: 20px;
+}
+.student-filter-inputs > div {
+    flex: 1; /* 讓兩個輸入框平分寬度 */
+}
+
+/* 所有下拉選單和文字輸入框的統一樣式 */
+select, input[type="text"] {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    box-sizing: border-box; /* 確保 padding 不會撐爆寬度 */
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+/* 按鈕群組 */
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+/* 按鈕基本樣式 */
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* 次要按鈕 (重設) */
+button.secondary {
+    background-color: #6c757d;
+}
+button.secondary:hover {
+    background-color: #5a6268;
+}
+
+
+/* 表格容器，用於滾動 */
+.table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+}
+
+/* 表格 */
+#data-table {
+    width: 100%;
+    border-collapse: collapse; 
+}
+
+/* 表格標題 (thead) 和 內容 (tbody) */
+#data-table th,
+#data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: top;
+    /* 為了處理長字串，讓它可以自動換行 */
+    word-break: break-word;
+}
+
+/* 表格標題列 */
+#data-table thead {
+    background-color: #007bff;
+    color: #ffffff;
+    position: sticky; 
+    top: 0;
+}
+
+/* 表格奇數行 */
+#data-table tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+/* 滑鼠懸停效果 */
+#data-table tbody tr:hover {
+    background-color: #f0f8ff;
+}
+
+/* 響應式設計：在小螢幕上 */
+@media (max-width: 600px) {
+    .student-filter-inputs {
+        flex-direction: column; /* 讓輸入框垂直堆疊 */
+    }
+}
+
+/* 新增：檔案上傳按鈕的樣式 */
+#csv-upload {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-top: 10px; /* 與 label 保持一點距離 */
+    border: 1px dashed #007bff;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    box-sizing: border-box;
+}
+
+/* 新增：上傳區域的提示文字 */
+.upload-note {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 10px;
+    text-align: center;
+}
