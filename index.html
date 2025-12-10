@@ -214,7 +214,7 @@
                     <option value="activity">模式 1: 依活動篩選 (下拉選單)</option>
                     <option value="name">模式 2: 僅搜尋姓名</option>
                     <option value="class">模式 3: 僅搜尋班別 (e.g. 4A)</option>
-                    <option value="classAndNo">模式 4: 班別 + 學號 (e.g. 4A + 12)</option>
+                    <option value="batch">模式 4: 批量搜尋 (e.g. 1A5, 5D18)</option>
                 </select>
 
                 <select id="activityList" class="input-hidden" style="flex-grow:1;">
@@ -222,9 +222,8 @@
                 </select>
 
                 <input type="text" id="inputMain" placeholder="輸入姓名..." class="input-hidden">
-
-                <input type="number" id="inputNo" placeholder="學號" class="input-hidden" style="max-width: 80px;">
-            </div>
+                
+                </div>
         </div>
     </div>
 
@@ -264,7 +263,7 @@
         });
     }
 
-    // 單一日期轉換 (dd/mm/yyyy -> yyyy-mm-dd)
+    // 日期轉換 (dd/mm/yyyy -> yyyy-mm-dd)
     function convertDDMMYYYYToISO(dateStr) {
         if (!dateStr) return null;
         const parts = dateStr.trim().split('/');
@@ -277,10 +276,9 @@
         return null;
     }
 
-    // 核心日期判斷函數：檢查 activityDateStr (可能包含多個逗號分隔的日期) 是否包含 selectedISODate
+    // 判斷多日期
     function isActivityOnDate(activityDateStr, selectedISODate) {
         if (!activityDateStr) return false;
-        // 分割逗號，並處理每個日期
         const dates = activityDateStr.split(',');
         for (let d of dates) {
             const iso = convertDDMMYYYYToISO(d.trim());
@@ -311,11 +309,11 @@
         const mode = document.getElementById('searchMode').value;
         const activityList = document.getElementById('activityList');
         const inputMain = document.getElementById('inputMain');
-        const inputNo = document.getElementById('inputNo');
-
+        
+        // 先重置
         activityList.classList.add('input-hidden');
         inputMain.classList.add('input-hidden');
-        inputNo.classList.add('input-hidden');
+        inputMain.value = '';
 
         if (mode === 'activity') {
             activityList.classList.remove('input-hidden');
@@ -323,30 +321,24 @@
         else if (mode === 'name') {
             inputMain.classList.remove('input-hidden');
             inputMain.placeholder = '輸入姓名...';
-            inputMain.value = '';
         } 
         else if (mode === 'class') {
             inputMain.classList.remove('input-hidden');
             inputMain.placeholder = '輸入班別 (例如 4A)...';
-            inputMain.value = '';
         } 
-        else if (mode === 'classAndNo') {
+        else if (mode === 'batch') {
             inputMain.classList.remove('input-hidden');
-            inputMain.placeholder = '班別 (e.g. 4A)';
-            inputNo.classList.remove('input-hidden');
-            inputMain.value = '';
-            inputNo.value = '';
+            inputMain.placeholder = '輸入學生代碼 (例如 1A5, 5D18, 6A2)...';
         }
     }
 
-    // 當日期改變時，更新「活動下拉選單」的內容
+    // 更新活動下拉選單
     function updateActivityDropdown(selectedISODate) {
         const activitySelect = document.getElementById('activityList');
         activitySelect.innerHTML = '<option value="">-- 顯示所有活動 --</option>';
 
         if (!selectedISODate) return;
 
-        // 使用新的判斷邏輯找出當天的所有活動
         const todaysActivities = scheduleData.filter(item => {
             return isActivityOnDate(item.Date, selectedISODate);
         });
@@ -414,7 +406,6 @@
 
     document.getElementById('activityList').addEventListener('change', refreshDisplay);
     document.getElementById('inputMain').addEventListener('input', refreshDisplay);
-    document.getElementById('inputNo').addEventListener('input', refreshDisplay);
 
     function refreshDisplay() {
         const dateVal = document.getElementById('datePicker').value;
@@ -430,10 +421,9 @@
 
         const mode = document.getElementById('searchMode').value;
         const activityFilterVal = document.getElementById('activityList').value; 
-        const valMain = document.getElementById('inputMain').value.trim().toLowerCase();
-        const valNo = document.getElementById('inputNo').value.trim();
+        const valMain = document.getElementById('inputMain').value.trim(); // 這裡先不轉小寫，以便處理 Class
 
-        // 1. 使用新的多日期判斷邏輯篩選活動
+        // 1. 篩選活動
         let todaysActivities = scheduleData.filter(item => {
             return isActivityOnDate(item.Date, selectedISODate);
         });
@@ -445,41 +435,70 @@
             return;
         }
 
-        // 2. 模式1: 依活動篩選
+        // 模式1: 依活動篩選
         if (mode === 'activity' && activityFilterVal !== '') {
             todaysActivities = todaysActivities.filter(item => item.Activity === activityFilterVal);
         }
 
+        // 預處理「批量搜尋」的標籤 (如果是在模式4)
+        let batchTargets = [];
+        if (mode === 'batch' && valMain.length > 0) {
+            // 分割使用者輸入: "1A5, 5D18" -> ["1A5", "5D18"]
+            const tokens = valMain.toUpperCase().split(/[\s,]+/).filter(t => t.length > 0);
+            
+            // 解析每個 token: "1A5" -> { cls: "1A", no: 5 }
+            // 假設格式為: 數字+英文+數字 (例如 1A5, 6D12)
+            // Regex: 開頭是數字和字母(Class)，結尾是數字(ClassNo)
+            const regex = /^(\d+[A-Z])(\d+)$/;
+            
+            tokens.forEach(token => {
+                const match = token.match(regex);
+                if (match) {
+                    batchTargets.push({
+                        cls: match[1],         // e.g. "1A"
+                        no: parseInt(match[2]) // e.g. 5
+                    });
+                }
+            });
+        }
+
         let hasResult = false;
 
-        // 3. 遍歷活動
+        // 2. 遍歷活動
         todaysActivities.forEach(activity => {
             const activityName = activity.Activity;
             let participants = studentsData.filter(s => s.Activity === activityName);
 
-            // 4. 模式 2, 3, 4 過濾
+            // 3. 過濾名單
             if (mode !== 'activity') {
                 participants = participants.filter(s => {
                     const sName = (s.Name || '').toLowerCase();
-                    const sClass = (s.Class || '').toLowerCase().trim();
-                    const sNo = (s.ClassNo || '').toString().trim();
+                    const sClass = (s.Class || '').toUpperCase().trim();
+                    const sNo = parseInt(s.ClassNo || '0');
+                    const inputLower = valMain.toLowerCase();
 
                     if (mode === 'name') {
-                        return sName.includes(valMain);
+                        return sName.includes(inputLower);
                     } 
                     else if (mode === 'class') {
-                        return valMain === '' || sClass === valMain;
+                        // Class 精確匹配 (不分大小寫)
+                        return valMain === '' || sClass === inputLower.toUpperCase();
                     } 
-                    else if (mode === 'classAndNo') {
-                        const matchClass = valMain === '' || sClass === valMain;
-                        const matchNo = valNo === '' || sNo === valNo;
-                        if (valMain === '' && valNo === '') return true;
-                        return matchClass && matchNo;
+                    else if (mode === 'batch') {
+                        // 批量匹配
+                        if (batchTargets.length === 0) return true; // 未輸入時顯示所有? 或者顯示空? 這裡設定為:未輸入顯示空
+                        if (valMain.trim() === '') return true; // 如果輸入框完全是空的，就顯示全部 (可選) -> 這裡保持「有輸入才過濾」
+
+                        // 檢查這位學生是否在 batchTargets 列表中
+                        return batchTargets.some(target => {
+                            return target.cls === sClass && target.no === sNo;
+                        });
                     }
                     return true;
                 });
 
-                const hasInput = valMain.length > 0 || valNo.length > 0;
+                // 如果有輸入搜尋內容，且沒人符合，就跳過此活動
+                const hasInput = valMain.length > 0;
                 if (hasInput && participants.length === 0) {
                     return;
                 }
@@ -521,7 +540,8 @@
                                 ? `<span class="lunch-tag">留校午膳: ${s['Stay Lunch']}</span>` 
                                 : '<span class="no-lunch">-</span>';
                             
-                            let rowClass = (mode !== 'activity' && (valMain || valNo)) ? 'highlight' : '';
+                            // 高亮邏輯
+                            let rowClass = (mode !== 'activity' && valMain.length > 0) ? 'highlight' : '';
 
                             return `
                                 <tr class="${rowClass}">
